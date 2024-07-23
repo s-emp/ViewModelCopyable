@@ -1,8 +1,13 @@
 import ModelCopyable
 
-let a = 17
-let b = 25
+class ComponentView { }
 
-let (result, code) = #stringify(a + b)
-
-print("The value \(result) was produced by the code \"\(code)\"")
+extension ComponentView {
+    @Copyable(ComponentView.self)
+    struct Model {
+        /// Name
+        let name: String
+        /// Age
+        let age: Int
+    }
+}

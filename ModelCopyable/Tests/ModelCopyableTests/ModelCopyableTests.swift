@@ -9,7 +9,7 @@ import XCTest
 import ModelCopyableMacros
 
 let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
+    "Copyable": CopyableMacro.self,
 ]
 #endif
 
@@ -18,27 +18,67 @@ final class ModelCopyableTests: XCTestCase {
         #if canImport(ModelCopyableMacros)
         assertMacroExpansion(
             """
-            #stringify(a + b)
+            extension ProfileView {
+                @Copyable(ProfileView.self)
+                public struct Model: Equatable {
+                    /// Display name
+                    @Semantic
+                    public private(set) var name: NSAttributedString
+                    /// Account status
+                    public let status: Status
+            
+                    public init(
+                        name: NSAttributedString,
+                        status: Status
+                    ) {
+                        self.name = name
+                        self.status = status
+                    }
+                }
+            }
             """,
             expandedSource: """
-            (a + b, "a + b")
+            extension ProfileView {
+                public struct Model: Equatable {
+                    /// Display name
+                    @Semantic
+                    public private(set) var name: NSAttributedString
+                    /// Account status
+                    public let status: Status
+            
+                    public init(
+                        name: NSAttributedString,
+                        status: Status
+                    ) {
+                        self.name = name
+                        self.status = status
+                    }
+            
+                    public func copy(build: (inout Builder) -> Void) -> Self {
+                        var builder = Builder(model: self)
+                        build(&builder)
+                        return .init(name: builder.name, status: builder.status)
+                    }
+            
+                    public func copy<T>(_ keyPath: WritableKeyPath<Builder, T>, _ value: T) -> Self {
+                        var builder = Builder(model: self)
+                        builder[keyPath: keyPath] = value
+                        return .init(name: builder.name, status: builder.status)
+                    }
+            
+                    public struct Builder {
+                        /// Display name
+                        public var name: NSAttributedString
+                        /// Account status
+                        public var status: Status
+                        public init(model: ProfileView.Model) {
+                            name = model.name
+                            status = model.status
+                        }
+                    }
+                }
+            }
             """,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
-
-    func testMacroWithStringLiteral() throws {
-        #if canImport(ModelCopyableMacros)
-        assertMacroExpansion(
-            #"""
-            #stringify("Hello, \(name)")
-            """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
             macros: testMacros
         )
         #else
