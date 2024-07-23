@@ -84,10 +84,17 @@ public struct CopyableMacro: MemberMacro {
         var params: [(name: TokenSyntax, type: TokenSyntax, comment: String)] = []
         for (index, binding) in memberBindings.enumerated() {
             guard
-                let paramName = binding?.pattern.as(IdentifierPatternSyntax.self)?.identifier,
-                let paramType = binding?.typeAnnotation?.type.as(IdentifierTypeSyntax.self)?.name
+                let binding,
+                let paramName = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier,
+                let typeAnnotation = binding.typeAnnotation
             else { continue }
-            params.append((name: paramName, type: paramType, comment: comments[index]))
+            if let identifierType = typeAnnotation.type.as(IdentifierTypeSyntax.self) {
+                params.append((name: paramName, type: identifierType.name, comment: comments[index]))
+            } else if let arrayType = typeAnnotation.type.as(ArrayTypeSyntax.self) {
+                if let identifierType = arrayType.element.as(IdentifierTypeSyntax.self) {
+                    params.append((name: paramName, type: "[\(identifierType.name)]", comment: comments[index]))
+                }
+            }
         }
         let builder = try StructDeclSyntax("public struct Builder") {
             for param in params {

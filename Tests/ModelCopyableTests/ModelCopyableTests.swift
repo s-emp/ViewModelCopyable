@@ -26,13 +26,16 @@ final class ModelCopyableTests: XCTestCase {
                     public private(set) var name: NSAttributedString
                     /// Account status
                     public let status: Status
+                    public let children: [Child]
             
                     public init(
                         name: NSAttributedString,
-                        status: Status
+                        status: Status,
+                        let children: [Child]
                     ) {
                         self.name = name
                         self.status = status
+                        self.children = children
                     }
                 }
             }
@@ -45,25 +48,28 @@ final class ModelCopyableTests: XCTestCase {
                     public private(set) var name: NSAttributedString
                     /// Account status
                     public let status: Status
+                    public let children: [Child]
             
                     public init(
                         name: NSAttributedString,
-                        status: Status
+                        status: Status,
+                        let children: [Child]
                     ) {
                         self.name = name
                         self.status = status
+                        self.children = children
                     }
             
                     public func copy(build: (inout Builder) -> Void) -> Self {
                         var builder = Builder(model: self)
                         build(&builder)
-                        return .init(name: builder.name, status: builder.status)
+                        return .init(name: builder.name, status: builder.status, children: builder.children)
                     }
             
                     public func copy<T>(_ keyPath: WritableKeyPath<Builder, T>, _ value: T) -> Self {
                         var builder = Builder(model: self)
                         builder[keyPath: keyPath] = value
-                        return .init(name: builder.name, status: builder.status)
+                        return .init(name: builder.name, status: builder.status, children: builder.children)
                     }
             
                     public struct Builder {
@@ -71,9 +77,11 @@ final class ModelCopyableTests: XCTestCase {
                         public var name: NSAttributedString
                         /// Account status
                         public var status: Status
+                        public var children: [Child]
                         public init(model: ProfileView.Model) {
                             name = model.name
                             status = model.status
+                            children = model.children
                         }
                     }
                 }
