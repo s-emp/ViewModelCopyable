@@ -81,26 +81,20 @@ public struct CopyableMacro: MemberMacro {
             return comment
         }
         let memberBindings = variables.map { $0.bindings.first }
-        var params: [(name: TokenSyntax, type: TokenSyntax, comment: String)] = []
+        var params: [(name: TokenSyntax, type: String, comment: String)] = []
         for (index, binding) in memberBindings.enumerated() {
             guard
                 let binding,
                 let paramName = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier,
                 let typeAnnotation = binding.typeAnnotation
             else { continue }
-            if let identifierType = typeAnnotation.type.as(IdentifierTypeSyntax.self) {
-                params.append((name: paramName, type: identifierType.name, comment: comments[index]))
-            } else if let arrayType = typeAnnotation.type.as(ArrayTypeSyntax.self) {
-                if let identifierType = arrayType.element.as(IdentifierTypeSyntax.self) {
-                    params.append((name: paramName, type: "[\(identifierType.name)]", comment: comments[index]))
-                }
-            }
+            params.append((name: paramName, type: typeAnnotation.type.description, comment: comments[index]))
         }
         let builder = try StructDeclSyntax("public struct Builder") {
             for param in params {
                 """
                 \(raw: param.comment)
-                public var \(param.name): \(param.type)
+                public var \(param.name): \(raw: param.type)
                 """
             }
             try InitializerDeclSyntax("public init(model: \(raw: componentName).Model)") {
